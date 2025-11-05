@@ -108,7 +108,7 @@ class WikiDatabasePopulator:
             if quote_row:
                 quote_td = quote_row.find('td')
                 if quote_td:
-                    data["description"] = quote_td.get_text(strip=True)
+                    data["description"] = quote_td.get_text(separator=' ', strip=True)
             
             # Extract rarity from infobox (look for data-tag or td with rarity text)
             rarity_elem = infobox.find('span', class_=lambda x: x and 'data-tag' in x) or infobox.find('td', string=lambda x: x and x.strip().lower() in ['common', 'uncommon', 'rare', 'epic', 'legendary'])
@@ -129,8 +129,8 @@ class WikiDatabasePopulator:
             for row in table.find_all('tr'):
                 cells = row.find_all(['th', 'td'])
                 if len(cells) >= 2:
-                    key = cells[0].get_text(strip=True).lower()
-                    value = cells[1].get_text(strip=True)
+                    key = cells[0].get_text(separator=' ', strip=True).lower()
+                    value = cells[1].get_text(separator=' ', strip=True)
                     
                     # Map table rows to stats
                     if 'weight' in key:
@@ -226,14 +226,66 @@ class WikiDatabasePopulator:
             else:
                 data["type"] = "quest"
         
-        # Extract description
+        # Extract description from first paragraph
         content = soup.find('div', class_='mw-parser-output')
         if content:
-            for p in content.find_all('p', recursive=False):
-                text = p.get_text(strip=True)
+            # Try to find the first paragraph - it might be in the first section
+            first_section = content.find('section', class_='citizen-section')
+            search_area = first_section if first_section else content
+            
+            # Find first paragraph that's not inside an infobox
+            for p in search_area.find_all('p'):
+                # Skip if paragraph is inside infobox
+                if p.find_parent('table', class_='infobox'):
+                    continue
+                # Use separator=' ' to preserve spacing between linked text
+                text = p.get_text(separator=' ', strip=True)
                 if text and len(text) > 20:
                     data["description"] = text
                     break
+        
+        # Extract trader and location from infobox table
+        infobox = soup.find('table', class_='infobox')
+        if infobox:
+            # Look for trader row
+            trader_row = infobox.find('tr', class_='data-trader')
+            if trader_row:
+                trader_td = trader_row.find('td')
+                if trader_td:
+                    trader_link = trader_td.find('a')
+                    if trader_link:
+                        data["trader"] = trader_link.get_text(strip=True)
+                    else:
+                        data["trader"] = trader_td.get_text(strip=True)
+            
+            # Look for location row
+            location_row = infobox.find('tr', class_='data-location')
+            if location_row:
+                location_td = location_row.find('td')
+                if location_td:
+                    # Extract all location links
+                    location_links = location_td.find_all('a')
+                    if location_links:
+                        data["location"] = ', '.join([link.get_text(strip=True) for link in location_links])
+                    else:
+                        data["location"] = location_td.get_text(strip=True)
+        
+        # Extract dialog
+        dialog_heading = self._find_heading(soup, ['dialog', 'dialogue'])
+        if dialog_heading:
+            # Look for italic/em text after the heading
+            next_elem = dialog_heading.find_next(['p', 'div', 'blockquote'])
+            if next_elem:
+                # Try to find italic text (dialog is usually in italics)
+                dialog_text = None
+                em_tag = next_elem.find(['em', 'i'])
+                if em_tag:
+                    dialog_text = em_tag.get_text(separator=' ', strip=True)
+                else:
+                    dialog_text = next_elem.get_text(separator=' ', strip=True)
+                
+                if dialog_text and len(dialog_text) > 10:
+                    data["dialog"] = dialog_text
         
         # Extract objectives
         objectives_heading = self._find_heading(soup, ['objective', 'goal', 'task'])
@@ -273,7 +325,7 @@ class WikiDatabasePopulator:
         next_elem = heading.find_next(['ul', 'ol'])
         if next_elem:
             for li in next_elem.find_all('li', recursive=False):
-                text = li.get_text(strip=True)
+                text = li.get_text(separator=' ', strip=True)
                 link = li.find('a')
                 items.append({
                     "name": text,
@@ -287,30 +339,45 @@ class WikiDatabasePopulator:
         next_elem = heading.find_next(['ul', 'ol'])
         if next_elem:
             for li in next_elem.find_all('li', recursive=False):
-                items.append(li.get_text(strip=True))
+                items.append(li.get_text(separator=' ', strip=True))
         return items
     
     def _extract_material_list(self, heading) -> List[Dict[str, Any]]:
-        """Extract material list with quantities (e.g., '5x Metal Parts')"""
+        """Extract material list with quantities (e.g., '5x Metal Parts', 'x33,000 XP')"""
         materials = []
         next_elem = heading.find_next(['ul', 'ol', 'table'])
         
         if next_elem and next_elem.name in ['ul', 'ol']:
             for li in next_elem.find_all('li', recursive=False):
-                text = li.get_text(strip=True)
-                # Parse "5x Metal Parts" or "Metal Parts x5"
-                match = re.search(r'(\d+)\s*x?\s*(.+)', text, re.IGNORECASE)
+                text = li.get_text(separator=' ', strip=True)
+                # Parse different formats:
+                # "5x Metal Parts" - quantity before 'x'
+                # "x33,000 XP" - quantity after 'x' with commas
+                # "Metal Parts x5" - quantity after item
+                
+                # Try "x33,000 XP" format first (x followed by number with possible commas)
+                match = re.match(r'x\s*([\d,]+)\s+(.+)', text, re.IGNORECASE)
                 if match:
+                    quantity_str = match.group(1).replace(',', '')
                     materials.append({
                         "item": match.group(2).strip(),
-                        "quantity": int(match.group(1))
+                        "quantity": int(quantity_str)
                     })
                 else:
-                    # No quantity found, assume 1
-                    materials.append({
-                        "item": text,
-                        "quantity": 1
-                    })
+                    # Try "5x Metal Parts" format (number followed by x)
+                    match = re.search(r'([\d,]+)\s*x\s*(.+)', text, re.IGNORECASE)
+                    if match:
+                        quantity_str = match.group(1).replace(',', '')
+                        materials.append({
+                            "item": match.group(2).strip(),
+                            "quantity": int(quantity_str)
+                        })
+                    else:
+                        # No quantity found, assume 1
+                        materials.append({
+                            "item": text,
+                            "quantity": 1
+                        })
         
         return materials
     
@@ -359,7 +426,7 @@ class WikiDatabasePopulator:
                     continue
                 
                 # Skip rows with just "?"
-                cell_texts = [c.get_text(strip=True) for c in cells]
+                cell_texts = [c.get_text(separator=' ', strip=True) for c in cells]
                 if all(text == '?' for text in cell_texts):
                     continue
                 
@@ -371,7 +438,7 @@ class WikiDatabasePopulator:
                 
                 # Extract inputs (recipe column)
                 if recipe_col is not None and len(cells) > recipe_col:
-                    recipe_text = cells[recipe_col].get_text(strip=True)
+                    recipe_text = cells[recipe_col].get_text(separator=' ', strip=True)
                     recipe["inputs"] = self._parse_crafting_materials(recipe_text)
                     
                     # Also try to get item names from links
@@ -379,7 +446,7 @@ class WikiDatabasePopulator:
                     if links and not recipe["inputs"]:
                         # If text parsing failed, try extracting from links
                         for link in links:
-                            item_name = link.get_text(strip=True)
+                            item_name = link.get_text(separator=' ', strip=True)
                             # Try to extract quantity from surrounding text
                             recipe["inputs"].append({
                                 "item": item_name,
@@ -388,13 +455,13 @@ class WikiDatabasePopulator:
                 
                 # Extract workshop
                 if workshop_col is not None and len(cells) > workshop_col:
-                    workshop_text = cells[workshop_col].get_text(strip=True)
+                    workshop_text = cells[workshop_col].get_text(separator=' ', strip=True)
                     if workshop_text and workshop_text != '?':
                         recipe["workshop"] = workshop_text
                 
                 # Extract output
                 if output_col is not None and len(cells) > output_col:
-                    output_text = cells[output_col].get_text(strip=True)
+                    output_text = cells[output_col].get_text(separator=' ', strip=True)
                     parsed_output = self._parse_crafting_materials(output_text)
                     if parsed_output and len(parsed_output) > 0:
                         recipe["output"] = parsed_output[0]  # Single output
@@ -411,6 +478,7 @@ class WikiDatabasePopulator:
         - "2x ARC Motion Core+2xAdvanced Mechanical Components"
         - "5x Metal Parts"
         - "ARC Alloy + 3x Steel"
+        - "33,000 XP" (numbers with commas)
         
         Returns list of {item: str, quantity: int}
         """
@@ -419,18 +487,21 @@ class WikiDatabasePopulator:
         
         materials = []
         
-        # Split by + or , or &
-        parts = re.split(r'[+,&]', text)
+        # Split by + or & (but NOT comma, as it might be in numbers like "33,000")
+        parts = re.split(r'[+&]', text)
         
         for part in parts:
             part = part.strip()
             if not part or part == '?':
                 continue
             
-            # Try to match "5x Item Name" or "5 Item Name"
-            match = re.match(r'(\d+)\s*[x×]?\s*(.+)', part, re.IGNORECASE)
+            # Try to match "5x Item Name" or "5 Item Name" or "33,000 XP"
+            # This regex handles numbers with commas
+            match = re.match(r'([\d,]+)\s*[x×]?\s*(.+)', part, re.IGNORECASE)
             if match:
-                quantity = int(match.group(1))
+                # Remove commas from quantity string and convert to int
+                quantity_str = match.group(1).replace(',', '')
+                quantity = int(quantity_str)
                 item_name = match.group(2).strip()
             else:
                 # No quantity found, assume 1
