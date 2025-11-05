@@ -46,3 +46,9 @@ env/
 scraped_data/*.json
 scraped_data/*.md
 !scraped_data/README.md
+
+# System-specific scripts and notes
+scripts/*.bat
+scripts/*.ps1
+scripts/test_*.py
+*Password_Reset*.md
