@@ -41,3 +41,8 @@ env/
 
 # Logs
 *.log
+
+# Scraped data output files (keep README)
+scraped_data/*.json
+scraped_data/*.md
+!scraped_data/README.md
