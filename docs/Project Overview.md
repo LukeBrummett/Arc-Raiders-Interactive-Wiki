@@ -3,7 +3,32 @@
 **Project Name:** Arc Raiders Interactive Wiki  
 **Created:** 2025-11-04  
 **Maintainer:** LukeBrummett  
-**Status:** Planning & Design Phase
+**Status:** ON HOLD - Discovered Existing Comprehensive Database
+
+---
+
+## 🛑 Project Status Update (2025-11-04)
+
+**DISCOVERED:** [ardb.app](https://ardb.app/) provides a comprehensive database with most planned features already implemented:
+
+- ✅ Quest Tracker - [https://ardb.app/trackers/quests](https://ardb.app/trackers/quests)
+- ✅ Item Tracker - [https://ardb.app/trackers/required-items](https://ardb.app/trackers/required-items)
+- ✅ Recipe Tracker - [https://ardb.app/trackers/recipes](https://ardb.app/trackers/recipes)
+- ✅ Hideout Tracker - [https://ardb.app/trackers/hideout](https://ardb.app/trackers/hideout)
+- ✅ Comprehensive item database - [https://ardb.app/db/items](https://ardb.app/db/items)
+- ✅ Quest database with locations - [https://ardb.app/db/quests](https://ardb.app/db/quests)
+- ✅ ARC enemy database - [https://ardb.app/db/arc](https://ardb.app/db/arc)
+
+**DECISION:** Project paused to evaluate:
+1. Whether to pivot to features ardb.app doesn't offer (AI recommendations, item comparison, build optimization)
+2. Whether to contribute to ardb.app instead
+3. Whether to continue as a complementary tool with different UX/features
+
+**CURRENT STATE:**
+- Backend API fully functional (214 items, 26 tasks from arcraiders.wiki)
+- Frontend homepage with working search implemented
+- Database schema flexible enough to integrate multiple data sources
+- All code committed to GitHub repository
 
 ---
 
@@ -71,11 +96,24 @@ The Arc Raiders Interactive Wiki aims to be the definitive, community-focused re
 - **CI/CD:** TBD based on deployment needs
 
 ### Data Scraping
+
+**⚠️ UPDATE:** Original plan was to scrape https://arcraiders.wiki/, but discovered [ardb.app](https://ardb.app/) has significantly more comprehensive data including:
+- Item sell prices and detailed stats
+- Complete quest objectives and locations
+- Crafting recipes with exact requirements
+- Built-in progress tracking
+
+**Original Plan (May Be Superseded):**
 - **Source:** https://arcraiders.wiki/
 - **Technology:** Python (BeautifulSoup/Scrapy)
 - **Execution:** Manual trigger scripts
 - **Timing:** During game update windows
 - **Workflow:** Scrape → Manual Review → Database Update
+
+**Future Considerations:**
+- Investigate if ardb.app has an API
+- Consider scraping both sources and merging data
+- Evaluate whether custom scraping is still necessary
 
 ---
 
@@ -557,6 +595,36 @@ For questions, suggestions, or contributions, please contact the maintainer or o
 
 ---
 
-**Last Updated:** 2025-11-04 06:05:51 UTC  
-**Version:** 1.1  
-**Status:** Living Document (updates as project evolves)
+## Potential Pivot Directions (Post-ardb.app Discovery)
+
+Since ardb.app already provides comprehensive tracking and database features, potential unique value propositions:
+
+### 1. AI-Powered Assistant
+- Natural language queries: "I need more fabric" → suggests best sources/quests
+- Item comparison and ranking: "Which assault rifle is best for X?"
+- Build optimization based on playstyle
+- Quest path recommendations
+
+### 2. Complementary Features
+- Different UX/design approach (may appeal to different users)
+- Offline-first PWA capability
+- Import/export from ardb.app
+- Mobile-optimized experience
+- Community tips and strategies layer
+
+### 3. Developer/API Focus
+- Public API for Arc Raiders data (if ardb.app doesn't have one)
+- Developer tools for the Arc Raiders community
+- Data aggregation from multiple sources
+- Historical data tracking (patch changes, meta shifts)
+
+### 4. Collaboration
+- Reach out to ardb.app developers
+- Contribute features/improvements to their platform
+- Partner on complementary tools
+
+---
+
+**Last Updated:** 2025-11-04 (Evening - Post-ardb.app Discovery)  
+**Version:** 1.2  
+**Status:** Living Document (Project On Hold Pending Direction Decision)

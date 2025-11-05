@@ -1,5 +1,118 @@
 # Arc Raiders Interactive Wiki
 
+> ⚠️ **PROJECT ON HOLD** - Discovered [ardb.app](https://ardb.app/) which already implements most planned features.
+
+## Project Status
+
+**Started:** November 4, 2025  
+**Current Status:** On hold pending direction decision
+
+### What Was Built
+
+✅ **Backend API (FastAPI + PostgreSQL)**
+- 214 items scraped from arcraiders.wiki
+- 26 quests/tasks with detailed data
+- RESTful API with pagination, search, filtering
+- Fully functional endpoints at `http://localhost:8000/docs`
+
+✅ **Frontend (React + Tailwind CSS)**
+- Homepage with working search bar
+- Real-time autocomplete across items and tasks
+- Cookie-based progress tracking (no accounts needed)
+- Responsive design foundation
+
+✅ **Data Quality**
+- 100% item extraction quality
+- 95%+ task extraction quality
+- Proper text spacing and number parsing
+- JSONB storage for flexible data
+
+### Why On Hold
+
+Discovered [ardb.app](https://ardb.app/) which provides:
+- Quest Tracker, Item Tracker, Recipe Tracker, Hideout Tracker
+- More comprehensive data than arcraiders.wiki
+- Already-built progress tracking
+- Better item stats (sell prices, rarity, etc.)
+
+### Potential Next Steps
+
+1. **Pivot to AI features** - Natural language queries, build optimization
+2. **Complement ardb.app** - Different UX, offline capability
+3. **Contribute to ardb.app** - Collaborate instead of compete
+4. **Archive project** - Use ardb.app instead
+
+## Repository Structure
+
+```
+backend/
+├── app/                  # FastAPI application
+│   ├── models/          # SQLAlchemy models
+│   ├── routes/          # API endpoints (items, tasks, search)
+│   └── schemas.py       # Pydantic schemas
+├── scripts/             # Utility scripts
+│   ├── refresh_data.py  # Update individual items/tasks
+│   └── lookup.py        # Quick database inspection
+└── populate_database.py # Main scraper (758 lines)
+
+frontend/
+├── src/
+│   ├── components/      # React components
+│   │   ├── SearchBar.jsx
+│   │   ├── Navbar.jsx
+│   │   └── Footer.jsx
+│   ├── pages/          # Page components
+│   │   └── HomePage.jsx
+│   ├── services/       # API client
+│   └── utils/          # Cookie management
+└── package.json
+
+docs/
+├── Project Overview.md  # Full project documentation
+└── Code Organization.md # Technical documentation
+```
+
+## Running Locally (If Continuing)
+
+### Backend
+```bash
+cd backend
+python -m venv venv
+venv\Scripts\activate
+pip install -r requirements.txt
+uvicorn app.main:app --reload
+```
+
+### Frontend
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+### Database
+Requires PostgreSQL 15. See `backend/README.md` for setup.
+
+## Documentation
+
+- **[Project Overview](docs/Project%20Overview.md)** - Original vision and current status
+- **[Code Organization](docs/Code%20Organization.md)** - Technical implementation details
+
+## Technologies
+
+- **Backend:** Python, FastAPI, PostgreSQL, SQLAlchemy, BeautifulSoup
+- **Frontend:** React, Vite, Tailwind CSS, React Router
+- **Data:** 214 items + 26 tasks from arcraiders.wiki
+
+## License
+
+This is a personal project. All Arc Raiders game content and materials are copyright of Embark Studios AB.
+
+---
+
+**Maintainer:** LukeBrummett  
+**Last Updated:** November 4, 2025
+
 Interactive wiki for Arc Raiders with crafting visualization, quest chains, and progress tracking. Built with React + Python + PostgreSQL.
 
 ## 🚀 Quick Start
